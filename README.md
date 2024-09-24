@@ -11,7 +11,7 @@
 4.) copas ae command di bawah buat installasi
 
 ```
-bash <(curl -s https://file.winsnip.xyz/file/uploads/moonbix.sh)
+git clone https://github.com/Savanop121/savamoonbic.git
 ```
 
 5.) buat edit data query sama mode screen commandnya di bawah, buat closenya ctrl+x trus y lalu enter aja
@@ -43,7 +43,9 @@ python3 main.py
 
 ***Windows/RDP***
 
-4.) click link ini https://github.com/winsnip/moonbix/archive/refs/heads/main.zip udh itu extract
+4.) click link ini  
+https://github.com/Savanop121/savamoonbic.git 
+udh itu extract
 
 5.)  edit file data.txt lalu isi aja query 
 
@@ -53,11 +55,6 @@ python3 main.py
 
 4.) di GRUP WINSNIP ae bg
 
-5.) neh linknya https://t.me/winsnip
+5.) neh linknya 
 
-
-
-
-***DONASI***
-
-kalo mau bayarin kopi https://trakteer.id/Winsnipsupport/tip
+https://t.me/savanop121
