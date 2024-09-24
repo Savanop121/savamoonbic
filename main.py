@@ -1,26 +1,32 @@
 from datetime import datetime
-import os, requests, time, crayons, json, threading
+import os
+import requests
+import time
+import crayons
+import json
+import threading
 import urllib.parse
 
-# WEE ANJG KALO MO RECODE YA FORK LAH NI REPO
-# DAN TETEP CANTUMIN WINSNIPNYA
 
 def is_url_encoded(url):
     decoded_url = urllib.parse.unquote(url)
     reencoded_url = urllib.parse.quote(decoded_url)
     return reencoded_url == url
 
+
 def url_decode(encoded_url):
     return urllib.parse.unquote(encoded_url)
 
+
 def print_banner():
-    print(crayons.blue('██     ██ ██ ███    ██ ███████ ███    ██ ██ ██████  '))
-    print(crayons.blue('██     ██ ██ ████   ██ ██      ████   ██ ██ ██   ██ '))
-    print(crayons.blue('██  █  ██ ██ ██ ██  ██ ███████ ██ ██  ██ ██ ██████  '))
-    print(crayons.blue('██ ███ ██ ██ ██  ██ ██      ██ ██  ██ ██ ██ ██      '))
-    print(crayons.blue(' ███ ███  ██ ██   ████ ███████ ██   ████ ██ ██      '))
-    print()
-    print("Join our Telegram channel: https://t.me/winsnip")
+    print(crayons.yellow('███████  █████  ██    ██  █████  ███    ██ '))
+    print(crayons.yellow('██      ██   ██ ██    ██ ██   ██ ████   ██ '))
+    print(crayons.yellow('███████ ███████ ██    ██ ███████ ██ ██  ██ '))
+    print(crayons.yellow('     ██ ██   ██  ██  ██  ██   ██ ██  ██ ██ '))
+    print(crayons.yellow('███████ ██   ██   ████   ██   ██ ██   ████ '))
+    print(" made and written by savan || @savanop")
+    print("Join telegram channel: https://t.me/savanop121")
+
 
 def log(message, level="INFO"):
     levels = {
@@ -30,7 +36,27 @@ def log(message, level="INFO"):
         "WARNING": crayons.yellow
     }
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"{crayons.white(current_time)} | {levels.get(level, crayons.cyan)(level)} | {message}")
+    print(f"{crayons.white(current_time)} | {
+          levels.get(level, crayons.cyan)(level)} | {message}")
+
+# Function to add a query to data.txt
+
+
+def add_query():
+    query = input("Enter query: ")
+    with open("data.txt", "a") as file:
+        file.write(query + "\n")
+    log(f"Query '{query}' added to data.txt", level="SUCCESS")
+
+# Function to add a proxy to proxy.txt
+
+
+def add_proxy():
+    proxy = input("Enter proxy: ")
+    with open("proxy.txt", "a") as file:
+        file.write(proxy + "\n")
+    log(f"Proxy '{proxy}' added to proxy.txt", level="SUCCESS")
+
 
 class MoonBix:
     def __init__(self, token, proxy=None):
@@ -46,7 +72,7 @@ class MoonBix:
             'referer': 'https://www.binance.info/en/game/tg/moon-bix',
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
         })
-        
+
         if proxy:
             self.session.proxies.update({'http': proxy, 'https': proxy})
 
@@ -61,7 +87,8 @@ class MoonBix:
                 json={'queryString': self.token, 'socialType': 'telegram'},
             )
             if response.status_code == 200:
-                self.session.headers['x-growth-token'] = response.json()['data']['accessToken']
+                self.session.headers['x-growth-token'] = response.json()[
+                    'data']['accessToken']
                 log("Logged in successfully!", level="SUCCESS")
                 return True
             else:
@@ -77,14 +104,14 @@ class MoonBix:
                 json={'resourceId': 2056},
             )
             return response.json()
-        
         except Exception as e:
             log(f"Error during get info: {e}", level="ERROR")
 
     def game_data(self):
         try:
             while True:
-                responses = requests.post('https://app.winsnip.xyz/play', json=self.game_response).text
+                responses = requests.post(
+                    'https://app.winsnip.xyz/play', json=self.game_response).text
                 try:
                     response = json.loads(responses)
                 except json.JSONDecodeError:
@@ -95,43 +122,45 @@ class MoonBix:
         except Exception as e:
             log(f"Error getting game data: {e}", level="ERROR")
 
-            
     def solve_task(self):
         try:
-            res = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/list",json={"resourceId": 2056})
+            res = self.session.post(
+                "https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/list", json={"resourceId": 2056})
             if not res or not res.json():
                 log(f"Failed to fetch tasks!", level="ERROR")
                 return
             tasks_datas = res.json()
             tasks_data = tasks_datas["data"]["data"][0]["taskList"]["data"]
             resource_ids = [entry['resourceId'] for entry in tasks_data
-                    if entry['status'] != 'COMPLETED' and entry['type'] != 'THIRD_PARTY_BIND']
+                            if entry['status'] != 'COMPLETED' and entry['type'] != 'THIRD_PARTY_BIND']
             for idx, resource_id in enumerate(resource_ids, start=1):
-                ress = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/complete", json={"resourceIdList": [resource_id], "referralCode": None}).json()
-                if(ress["code"] == "000000"):
-                    log(f"Succes complete task id {resource_id}", level="SUCCESS")
+                ress = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/complete", json={
+                                         "resourceIdList": [resource_id], "referralCode": None}).json()
+                if (ress["code"] == "000000"):
+                    log(f"Succes complete task id {
+                        resource_id}", level="SUCCESS")
                 else:
-                    log(f"Failed complete task id {resource_id}", level="ERROR")
+                    log(f"Failed complete task id {
+                        resource_id}", level="ERROR")
             return True
         except Exception as e:
             log(f"Error completing tasks: {e}", level="ERROR")
-
-
 
     def set_proxy(self, proxy=None):
         self.ses = requests.Session()
         if proxy is not None:
             self.ses.proxies.update({"http": proxy, "https": proxy})
 
-
     def complete_game(self):
         try:
             response = self.session.post(
                 'https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/game/complete',
-                json={'resourceId': 2056, 'payload': self.game['payload'], 'log': self.game['log']},
+                json={'resourceId': 2056,
+                      'payload': self.game['payload'], 'log': self.game['log']},
             )
             if response.json()['success']:
-                log(f"Game completed! Earned + {self.game['log']}", level="SUCCESS")
+                log(f"Game completed! Earned + {
+                    self.game['log']}", level="SUCCESS")
             return response.json()['success']
         except Exception as e:
             log(f"Error during complete game: {e}", level="ERROR")
@@ -148,7 +177,8 @@ class MoonBix:
                     log("Game started successfully!", level="INFO")
                     return True
                 elif self.game_response['code'] == '116002':
-                    log('Attempts not enough! Switching to the next account.', level="WARNING")
+                    log('Attempts not enough! Switching to the next account.',
+                        level="WARNING")
                     return False
                 log("ERROR! Cannot start game.", level="ERROR")
                 return False
@@ -174,6 +204,7 @@ class MoonBix:
                 log("Failed to complete game", level="ERROR")
             sleep(15)
 
+
 def sleep(seconds):
     while seconds > 0:
         time_str = time.strftime('%H:%M:%S', time.gmtime(seconds))
@@ -182,8 +213,9 @@ def sleep(seconds):
         print(f'\rWaiting {time_str}', end='', flush=True)
     print()
 
+
 def run_account(index, token, proxy=None):
-    if(is_url_encoded(token)):
+    if (is_url_encoded(token)):
         tokens = url_decode(token)
     else:
         tokens = token
@@ -193,25 +225,41 @@ def run_account(index, token, proxy=None):
     log(f"=== Account {index} Done ===", level="SUCCESS")
     sleep(10)
 
+
 if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     print_banner()
-    
-    proxies = [line.strip() for line in open('proxy.txt') if line.strip()]
-    tokens = [line.strip() for line in open('data.txt')]
 
-    threads = []
-    
-    log("==== Starting ===", level="INFO")
     while True:
-        for index, token in enumerate(tokens, start=1):
-            proxy = proxies[(index - 1) % len(proxies)] if proxies else None
-            t = threading.Thread(target=run_account, args=(index, token, proxy))
-            threads.append(t)
-            t.start()
+        print("\n1... = TYPE 1 FOR ADD QUERY")
+        print("2... = TYPE 2 FOR ADD PROXY")
+        print("3... = TYPE 3 FOR START GAME PLAY")
+        choice = input("Enter your choice: ")
 
-        for t in threads:
-            t.join()
+        if choice == "1":
+            add_query()
+        elif choice == "2":
+            add_proxy()
+        elif choice == "3":
+            proxies = [line.strip()
+                       for line in open('proxy.txt') if line.strip()]
+            tokens = [line.strip() for line in open('data.txt')]
 
-        log("All accounts have been completed.", level="SUCCESS")
-        sleep(2000)
+            threads = []
+
+            log("==== Starting ===", level="INFO")
+            for index, token in enumerate(tokens, start=1):
+                proxy = proxies[(index - 1) %
+                                len(proxies)] if proxies else None
+                t = threading.Thread(target=run_account,
+                                     args=(index, token, proxy))
+                threads.append(t)
+                t.start()
+
+            for t in threads:
+                t.join()
+
+            log("All accounts have been completed.", level="SUCCESS")
+            sleep(2000)
+        else:
+            print("Invalid choice. Please enter 1, 2, or 3.")
