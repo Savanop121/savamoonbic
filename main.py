@@ -36,21 +36,18 @@ def log(message, level="INFO"):
         "WARNING": crayons.yellow
     }
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"{crayons.white(current_time)} | {
-          levels.get(level, crayons.cyan)(level)} | {message}")
+    print(f"{crayons.white(current_time)} | {levels.get(level, crayons.cyan)(level)} | {message}")
+
 
 # Function to add a query to data.txt
-
-
 def add_query():
     query = input("Enter query: ")
     with open("data.txt", "a") as file:
         file.write(query + "\n")
     log(f"Query '{query}' added to data.txt", level="SUCCESS")
 
+
 # Function to add a proxy to proxy.txt
-
-
 def add_proxy():
     proxy = input("Enter proxy: ")
     with open("proxy.txt", "a") as file:
@@ -87,8 +84,7 @@ class MoonBix:
                 json={'queryString': self.token, 'socialType': 'telegram'},
             )
             if response.status_code == 200:
-                self.session.headers['x-growth-token'] = response.json()[
-                    'data']['accessToken']
+                self.session.headers['x-growth-token'] = response.json()['data']['accessToken']
                 log("Logged in successfully!", level="SUCCESS")
                 return True
             else:
@@ -125,23 +121,27 @@ class MoonBix:
     def solve_task(self):
         try:
             res = self.session.post(
-                "https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/list", json={"resourceId": 2056})
+                "https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/list", 
+                json={"resourceId": 2056}
+            )
             if not res or not res.json():
-                log(f"Failed to fetch tasks!", level="ERROR")
+                log("Failed to fetch tasks!", level="ERROR")
                 return
             tasks_datas = res.json()
             tasks_data = tasks_datas["data"]["data"][0]["taskList"]["data"]
-            resource_ids = [entry['resourceId'] for entry in tasks_data
-                            if entry['status'] != 'COMPLETED' and entry['type'] != 'THIRD_PARTY_BIND']
+            resource_ids = [
+                entry['resourceId'] for entry in tasks_data 
+                if entry['status'] != 'COMPLETED' and entry['type'] != 'THIRD_PARTY_BIND'
+            ]
             for idx, resource_id in enumerate(resource_ids, start=1):
-                ress = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/complete", json={
-                                         "resourceIdList": [resource_id], "referralCode": None}).json()
-                if (ress["code"] == "000000"):
-                    log(f"Succes complete task id {
-                        resource_id}", level="SUCCESS")
+                ress = self.session.post(
+                    "https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/complete", 
+                    json={"resourceIdList": [resource_id], "referralCode": None}
+                ).json()
+                if ress["code"] == "000000":
+                    log(f"Success complete task id {resource_id}", level="SUCCESS")
                 else:
-                    log(f"Failed complete task id {
-                        resource_id}", level="ERROR")
+                    log(f"Failed complete task id {resource_id}", level="ERROR")
             return True
         except Exception as e:
             log(f"Error completing tasks: {e}", level="ERROR")
@@ -155,12 +155,10 @@ class MoonBix:
         try:
             response = self.session.post(
                 'https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/game/complete',
-                json={'resourceId': 2056,
-                      'payload': self.game['payload'], 'log': self.game['log']},
+                json={'resourceId': 2056, 'payload': self.game['payload'], 'log': self.game['log']},
             )
             if response.json()['success']:
-                log(f"Game completed! Earned + {
-                    self.game['log']}", level="SUCCESS")
+                log(f"Game completed! Earned + {self.game['log']}", level="SUCCESS")
             return response.json()['success']
         except Exception as e:
             log(f"Error during complete game: {e}", level="ERROR")
@@ -177,8 +175,7 @@ class MoonBix:
                     log("Game started successfully!", level="INFO")
                     return True
                 elif self.game_response['code'] == '116002':
-                    log('Attempts not enough! Switching to the next account.',
-                        level="WARNING")
+                    log('Attempts not enough! Switching to the next account.', level="WARNING")
                     return False
                 log("ERROR! Cannot start game.", level="ERROR")
                 return False
@@ -215,7 +212,7 @@ def sleep(seconds):
 
 
 def run_account(index, token, proxy=None):
-    if (is_url_encoded(token)):
+    if is_url_encoded(token):
         tokens = url_decode(token)
     else:
         tokens = token
@@ -230,36 +227,36 @@ if __name__ == '__main__':
     os.system('cls' if os.name == 'nt' else 'clear')
     print_banner()
 
-    while True:
-        print("\n1... = TYPE 1 FOR ADD QUERY")
-        print("2... = TYPE 2 FOR ADD PROXY")
-        print("3... = TYPE 3 FOR START GAME PLAY")
-        choice = input("Enter your choice: ")
+    # Create files if they don't exist
+    if not os.path.exists('data.txt'):
+        with open('data.txt', 'w') as f:
+            pass
+    if not os.path.exists('proxy.txt'):
+        with open('proxy.txt', 'w') as f:
+            pass
 
+    while True:
+        choice = input(
+            "Choose an option:\n1. Add Query\n2. Add Proxy\n3. Start Game\n4. Exit\nYour choice: ")
+        
         if choice == "1":
             add_query()
         elif choice == "2":
             add_proxy()
         elif choice == "3":
-            proxies = [line.strip()
-                       for line in open('proxy.txt') if line.strip()]
-            tokens = [line.strip() for line in open('data.txt')]
-
-            threads = []
-
-            log("==== Starting ===", level="INFO")
-            for index, token in enumerate(tokens, start=1):
-                proxy = proxies[(index - 1) %
-                                len(proxies)] if proxies else None
-                t = threading.Thread(target=run_account,
-                                     args=(index, token, proxy))
-                threads.append(t)
-                t.start()
-
-            for t in threads:
-                t.join()
-
-            log("All accounts have been completed.", level="SUCCESS")
-            sleep(2000)
+            if os.path.exists('data.txt') and os.path.exists('proxy.txt'):
+                with open('data.txt') as file:
+                    tokens = [line.strip() for line in file]
+                with open('proxy.txt') as file:
+                    proxies = [line.strip() for line in file]
+                for index, token in enumerate(tokens):
+                    proxy = proxies[index % len(proxies)]
+                    thread = threading.Thread(target=run_account, args=(index + 1, token, proxy))
+                    thread.start()
+                break
+            else:
+                log("data.txt or proxy.txt not found. Please add queries or proxies.", level="ERROR")
+        elif choice == "4":
+            break
         else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
+            log("Invalid choice. Please try again.", level="ERROR")
