@@ -7,16 +7,13 @@ import json
 import threading
 import urllib.parse
 
-
 def is_url_encoded(url):
     decoded_url = urllib.parse.unquote(url)
     reencoded_url = urllib.parse.quote(decoded_url)
     return reencoded_url == url
 
-
 def url_decode(encoded_url):
     return urllib.parse.unquote(encoded_url)
-
 
 def print_banner():
     print(crayons.yellow('███████  █████  ██    ██  █████  ███    ██ '))
@@ -24,9 +21,8 @@ def print_banner():
     print(crayons.yellow('███████ ███████ ██    ██ ███████ ██ ██  ██ '))
     print(crayons.yellow('     ██ ██   ██  ██  ██  ██   ██ ██  ██ ██ '))
     print(crayons.yellow('███████ ██   ██   ████   ██   ██ ██   ████ '))
-    print(" made and written by savan || @savanop")
+    print("Custom Banner with your credits")
     print("Join telegram channel: https://t.me/savanop121")
-
 
 def log(message, level="INFO"):
     levels = {
@@ -38,14 +34,12 @@ def log(message, level="INFO"):
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print(f"{crayons.white(current_time)} | {levels.get(level, crayons.cyan)(level)} | {message}")
 
-
 # Function to add a query to data.txt
 def add_query():
     query = input("Enter query: ")
     with open("data.txt", "a") as file:
         file.write(query + "\n")
     log(f"Query '{query}' added to data.txt", level="SUCCESS")
-
 
 # Function to add a proxy to proxy.txt
 def add_proxy():
@@ -54,6 +48,17 @@ def add_proxy():
         file.write(proxy + "\n")
     log(f"Proxy '{proxy}' added to proxy.txt", level="SUCCESS")
 
+# Function to reset (clear) the queries in data.txt
+def reset_query():
+    with open("data.txt", "w") as file:
+        pass
+    log("All queries have been reset.", level="SUCCESS")
+
+# Function to reset (clear) the proxies in proxy.txt
+def reset_proxy():
+    with open("proxy.txt", "w") as file:
+        pass
+    log("All proxies have been reset.", level="SUCCESS")
 
 class MoonBix:
     def __init__(self, token, proxy=None):
@@ -196,67 +201,78 @@ class MoonBix:
             if not self.game_data():
                 log("Failed to generate game data!", level="ERROR")
                 return
-            sleep(45)
+            time.sleep(45)  # Remove sleep in the loop for account switching
             if not self.complete_game():
                 log("Failed to complete game", level="ERROR")
-            sleep(15)
-
-
-def sleep(seconds):
-    while seconds > 0:
-        time_str = time.strftime('%H:%M:%S', time.gmtime(seconds))
-        time.sleep(1)
-        seconds -= 1
-        print(f'\rWaiting {time_str}', end='', flush=True)
-    print()
-
 
 def run_account(index, token, proxy=None):
     if is_url_encoded(token):
         tokens = url_decode(token)
     else:
         tokens = token
-    log(f"=== Account {index} ===", level="INFO")
-    x = MoonBix(tokens, proxy)
-    x.start()
-    log(f"=== Account {index} Done ===", level="SUCCESS")
-    sleep(10)
+    log(f"Starting account {index} with token: {tokens} using proxy: {proxy}", level="INFO")
+    moonbix = MoonBix(tokens, proxy=proxy)
+    moonbix.start()
 
-
-if __name__ == '__main__':
-    os.system('cls' if os.name == 'nt' else 'clear')
+def main():
     print_banner()
-
-    # Create files if they don't exist
-    if not os.path.exists('data.txt'):
-        with open('data.txt', 'w') as f:
+    # Ensure necessary files exist
+    if not os.path.exists("proxy.txt"):
+        with open("proxy.txt", "w") as f:
             pass
-    if not os.path.exists('proxy.txt'):
-        with open('proxy.txt', 'w') as f:
+    if not os.path.exists("data.txt"):
+        with open("data.txt", "w") as f:
             pass
 
-    while True:
-        choice = input(
-            "Choose an option:\n1. Add Query\n2. Add Proxy\n3. Start Game\n4. Exit\nYour choice: ")
-        
+    proxies = []
+    with open("proxy.txt", "r") as file:
+        proxies = [line.strip() for line in file.readlines() if line.strip()]
+
+    queries = []
+    with open("data.txt", "r") as file:
+        queries = [line.strip() for line in file.readlines() if line.strip()]
+
+    if not queries:
+        log("No queries found. Please add queries.", level="ERROR")
+        return
+
+    while True: 
+        print(crayons.green("\nSelect an option:"))
+        print(crayons.cyan("1. Add Query"))
+        print(crayons.cyan("2. Add Proxy"))
+        print(crayons.cyan("3. Start Gameplay"))
+        print(crayons.cyan("4. Reset Queries"))
+        print(crayons.cyan("5. Reset Proxies"))
+        print(crayons.cyan("6. Exit"))
+
+        choice = input("Enter your choice: ")
+
         if choice == "1":
             add_query()
         elif choice == "2":
             add_proxy()
         elif choice == "3":
-            if os.path.exists('data.txt') and os.path.exists('proxy.txt'):
-                with open('data.txt') as file:
-                    tokens = [line.strip() for line in file]
-                with open('proxy.txt') as file:
-                    proxies = [line.strip() for line in file]
-                for index, token in enumerate(tokens):
-                    proxy = proxies[index % len(proxies)]
-                    thread = threading.Thread(target=run_account, args=(index + 1, token, proxy))
-                    thread.start()
-                break
-            else:
-                log("data.txt or proxy.txt not found. Please add queries or proxies.", level="ERROR")
+            log("Starting gameplay...", level="INFO")
+            index = 1
+            while True:
+                for token in queries:
+                    if index <= len(proxies):
+                        proxy = proxies[index - 1]
+                    else:
+                        proxy = None
+                    run_account(index, token, proxy)
+                    index += 1
+                    if index > len(queries):
+                        index = 1
         elif choice == "4":
+            reset_query()
+        elif choice == "5":
+            reset_proxy()
+        elif choice == "6":
+            log("Exiting...", level="INFO")
             break
         else:
-            log("Invalid choice. Please try again.", level="ERROR")
+            log("Invalid choice! Please select a valid option.", level="ERROR")
+
+if __name__ == "__main__":
+    main()
