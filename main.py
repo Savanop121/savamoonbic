@@ -77,6 +77,7 @@ class MoonBix:
                 return False
         except Exception as e:
             log(f"Error during login: {e}", level="ERROR")
+            return False
 
     def user_info(self):
         try:
@@ -88,10 +89,12 @@ class MoonBix:
         
         except Exception as e:
             log(f"Error during get info: {e}", level="ERROR")
+            return None
 
     def game_data(self):
         try:
-            while True:
+            max_retries = 100
+            for _ in range(max_retries):
                 responses = requests.post('https://app.winsnip.xyz/play', json=self.game_response).text
                 try:
                     response = json.loads(responses)
@@ -100,15 +103,19 @@ class MoonBix:
                 if response['message'] == 'success' and response['game']['log'] >= 100:
                     self.game = response['game']
                     return True
+                time.sleep(2)  # Wait for 2 seconds before retrying
+            log("Failed to get valid game data after multiple attempts", level="ERROR")
+            return False
         except Exception as e:
             log(f"Error getting game data: {e}", level="ERROR")
+            return False
 
     def solve_task(self):
         try:
             res = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/list",json={"resourceId": 2056})
             if not res or not res.json():
                 log(f"Failed to fetch tasks!", level="ERROR")
-                return
+                return False
             tasks_datas = res.json()
             tasks_data = tasks_datas["data"]["data"][0]["taskList"]["data"]
             resource_ids = [entry['resourceId'] for entry in tasks_data
@@ -116,12 +123,13 @@ class MoonBix:
             for idx, resource_id in enumerate(resource_ids, start=1):
                 ress = self.session.post("https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/task/complete", json={"resourceIdList": [resource_id], "referralCode": None}).json()
                 if(ress["code"] == "000000"):
-                    log(f"Succes complete task id {resource_id}", level="SUCCESS")
+                    log(f"Success complete task id {resource_id}", level="SUCCESS")
                 else:
                     log(f"Failed complete task id {resource_id}", level="ERROR")
             return True
         except Exception as e:
             log(f"Error completing tasks: {e}", level="ERROR")
+            return False
 
     def set_proxy(self, proxy=None):
         self.ses = requests.Session()
@@ -139,10 +147,12 @@ class MoonBix:
             return response.json()['success']
         except Exception as e:
             log(f"Error during complete game: {e}", level="ERROR")
+            return False
 
     def start_game(self):
         try:
-            while True:
+            max_retries = 100
+            for _ in range(max_retries):
                 response = self.session.post(
                     'https://www.binance.info/bapi/growth/v1/friendly/growth-paas/mini-app-activity/third-party/game/start',
                     json={'resourceId': 2056},
@@ -154,29 +164,33 @@ class MoonBix:
                 elif self.game_response['code'] == '116002':
                     log('Attempts not enough! Switching to the next account.', level="WARNING")
                     return False
-                log("ERROR! Cannot start game.", level="ERROR")
-                return False
+                log("ERROR! Cannot start game. Retrying...", level="ERROR")
+                time.sleep(2)  # Wait for 2 seconds before retrying
+            log("Failed to start game after multiple attempts", level="ERROR")
+            return False
         except Exception as e:
             log(f"Error during start game: {e}", level="ERROR")
+            return False
 
     def start(self):
         if not self.login():
             log("Login failed.", level="ERROR")
-            return
+            return False
         if not self.user_info():
             log("Failed to get user data.", level="ERROR")
-            return
+            return False
         if not self.solve_task():
             log("Failed to solve task.", level="ERROR")
-            return
+            return False
         while self.start_game():
             if not self.game_data():
                 log("Failed to generate game data!", level="ERROR")
-                return
+                continue
             sleep(45)
             if not self.complete_game():
                 log("Failed to complete game", level="ERROR")
             sleep(15)
+        return True
 
 def sleep(seconds):
     while seconds > 0:
@@ -197,10 +211,30 @@ def run_account(index, token, proxy=None):
     log(f"=== Account {index} Done ===", level="SUCCESS")
     sleep(10)
 
-if __name__ == '__main__':
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print_banner()
-    
+def add_query():
+    query = input("Enter your query: ")
+    with open('data.txt', 'a', encoding='utf-8') as f:
+        f.write(query + '\n')
+    log("Query added!", level="SUCCESS")
+
+def add_proxy():
+    proxy = input("Enter your proxy: ")
+    with open('proxy.txt', 'a', encoding='utf-8') as f:
+        f.write(proxy + '\n')
+    log("Proxy added!", level="SUCCESS")
+
+def reset_query():
+    open('data.txt', 'w').close()
+    log("Query file reset!", level="SUCCESS")
+
+def reset_proxy():
+    open('proxy.txt', 'w').close()
+    log("Proxy file reset!", level="SUCCESS")
+
+def start_game():
+    # Load tokens
+    tokens = [line.strip() for line in open('data.txt', encoding='utf-8') if line.strip()]
+
     # Check if 'proxy.txt' exists
     if os.path.exists('proxy.txt'):
         proxies = [line.strip() for line in open('proxy.txt', encoding='utf-8') if line.strip()]
@@ -208,39 +242,42 @@ if __name__ == '__main__':
         log("'proxy.txt' not found, continuing without proxies.", level="WARNING")
         proxies = []
 
-    # Load tokens
-    tokens = [line.strip() for line in open('data.txt', encoding='utf-8') if line.strip()]
-
-    # Run the program
-    threads = []
-    log("1. Add queries")
-    log("2. Add proxies")
-    log("3. Start")
-
-    choice = input("Enter your choice: ")
-
-    if choice == '1':
-        query = input("Enter your query: ")
-        with open('data.txt', 'a', encoding='utf-8') as f:
-            f.write(query + '\n')
-        log("Query added!", level="SUCCESS")
-    elif choice == '2':
-        proxy = input("Enter your proxy: ")
-        with open('proxy.txt', 'a', encoding='utf-8') as f:
-            f.write(proxy + '\n')
-        log("Proxy added!", level="SUCCESS")
-    elif choice == '3':
+    while True:
         for i, token in enumerate(tokens, start=1):
             if proxies:
                 proxy = proxies[i % len(proxies)]
             else:
                 proxy = None
-            thread = threading.Thread(target=run_account, args=(i, token, proxy))
-            threads.append(thread)
-            thread.start()
-            time.sleep(1)
-        
-        for thread in threads:
-            thread.join()
+            run_account(i, token, proxy)
+        log("Completed all accounts. Starting over...", level="INFO")
+        sleep(10)
 
-        log("==== Finished ===", level="SUCCESS")
+if __name__ == '__main__':
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print_banner()
+    
+    while True:
+        log("1. Add query")
+        log("2. Add proxy")
+        log("3. Start game")
+        log("4. Reset query")
+        log("5. Reset proxy")
+        log("6. Exit")
+
+        choice = input("Enter your choice: ")
+
+        if choice == '1':
+            add_query()
+        elif choice == '2':
+            add_proxy()
+        elif choice == '3':
+            start_game()
+        elif choice == '4':
+            reset_query()
+        elif choice == '5':
+            reset_proxy()
+        elif choice == '6':
+            log("Exiting...", level="INFO")
+            break
+        else:
+            log("Invalid choice. Please try again.", level="ERROR")
